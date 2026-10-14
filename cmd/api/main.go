@@ -18,7 +18,7 @@ func main() {
 		log.Fatalf("main.db.connect: %v", err)
 	}
 
-	log.Printf("⚙️ Database connected successfully")
+	log.Printf("✅ Database connected successfully")
 
 	mux := http.NewServeMux()
 
@@ -32,7 +32,7 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	log.Printf("✅ Server up and running at %v", "http://localhost:8080")
+	log.Printf("💻 Server up and running at %v", "http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
