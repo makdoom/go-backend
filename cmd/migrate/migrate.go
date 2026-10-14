@@ -31,7 +31,7 @@ func main() {
 		}
 		log.Println("Running UP migrations")
 	case "down":
-		if err := m.Down(); err != nil {
+		if err := m.Steps(-1); err != nil {
 			log.Fatalf("Error running DOWN migrations: %v\n", err)
 			return
 		}
