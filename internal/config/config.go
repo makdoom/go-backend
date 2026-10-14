@@ -22,12 +22,12 @@ func MustLoad() Config {
 
 	env := os.Getenv("ENV")
 	if env == "" {
-		panic("Env is not configured")
+		panic("Environment is not configured")
 	}
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		panic("Env is not configured")
+		panic("Database URL is not configured")
 	}
 
 	return Config{
