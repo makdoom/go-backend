@@ -1,0 +1,65 @@
+package handlers
+
+import (
+	"database/sql"
+	"encoding/json"
+	"log"
+	"net/http"
+	"time"
+)
+
+type listing struct {
+	Id          string    `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Price       float64   `json:"price"`
+	City        string    `json:"city"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func List(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rows, err := db.Query(`
+			SELECT id, title, description, price, city, created_at AS createdAt, updated_at AS updatedAt 
+			FROM listings 
+			ORDER BY created_at DESC 
+			LIMIT 5
+		`)
+		if err != nil {
+			log.Printf("Handler.List: DB query failed: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		listings := []listing{}
+		for rows.Next() {
+			var l listing
+
+			if err := rows.Scan(&l.Id, &l.Title, &l.Description, &l.Price, &l.City, &l.CreatedAt, &l.UpdatedAt); err != nil {
+				log.Printf("Handler.List: DB scan failed: %v", err)
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
+				return
+			}
+
+			listings = append(listings, l)
+		}
+
+		if err := rows.Err(); err != nil {
+			log.Printf("Handler.List: DB iteration failed: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		if err := rows.Err(); err != nil {
+			log.Printf("Handler.List: DB iteration failed after listing: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(listings)
+
+	}
+}
