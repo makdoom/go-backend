@@ -11,8 +11,10 @@ import (
 )
 
 func main() {
+	// Load configurations
 	cfg := config.MustLoad()
 
+	// Database connection
 	db, err := db.Connect(cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("main.db.connect: %v", err)
@@ -20,11 +22,15 @@ func main() {
 
 	log.Printf("✅ Database connected successfully")
 
+	// Dependency Injection
+	lh := handlers.NewListingHandler(db)
+
+	// Mux router
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", handlers.Health)
-	mux.HandleFunc("GET /listings", handlers.List(db))
-	mux.HandleFunc("DELETE /listing/{id}", handlers.DeleteListing(db))
+	mux.HandleFunc("GET /listings", lh.List)
+	mux.HandleFunc("DELETE /listing/{id}", lh.DeleteListing)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,

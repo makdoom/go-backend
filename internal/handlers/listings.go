@@ -18,63 +18,67 @@ type listing struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-func List(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := db.Query(`
+type ListingHandler struct {
+	db *sql.DB
+}
+
+func NewListingHandler(db *sql.DB) *ListingHandler {
+	return &ListingHandler{db: db}
+}
+
+func (lh *ListingHandler) List(w http.ResponseWriter, r *http.Request) {
+	rows, err := lh.db.Query(`
 			SELECT id, title, description, price, city, created_at AS createdAt, updated_at AS updatedAt 
 			FROM listings 
 			ORDER BY created_at DESC 
 			LIMIT 5
 		`)
-		if err != nil {
-			log.Printf("Handler.List: DB query failed: %v", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-
-		listings := []listing{}
-		for rows.Next() {
-			var l listing
-
-			if err := rows.Scan(&l.Id, &l.Title, &l.Description, &l.Price, &l.City, &l.CreatedAt, &l.UpdatedAt); err != nil {
-				log.Printf("Handler.List: DB scan failed: %v", err)
-				http.Error(w, "Internal server error", http.StatusInternalServerError)
-				return
-			}
-
-			listings = append(listings, l)
-		}
-
-		if err := rows.Err(); err != nil {
-			log.Printf("Handler.List: DB iteration failed: %v", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-
-		if err := rows.Err(); err != nil {
-			log.Printf("Handler.List: DB iteration failed after listing: %v", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(listings)
-
+	if err != nil {
+		log.Printf("Handler.List: DB query failed: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
+	defer rows.Close()
+
+	listings := []listing{}
+	for rows.Next() {
+		var l listing
+
+		if err := rows.Scan(&l.Id, &l.Title, &l.Description, &l.Price, &l.City, &l.CreatedAt, &l.UpdatedAt); err != nil {
+			log.Printf("Handler.List: DB scan failed: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		listings = append(listings, l)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("Handler.List: DB iteration failed: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("Handler.List: DB iteration failed after listing: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(listings)
+
 }
 
-func DeleteListing(db *sql.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
+func (lh *ListingHandler) DeleteListing(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
 
-		_, err := db.Exec(`DELETE FROM listings WHERE id = $1`, id)
-		if err != nil {
-			log.Printf("Handler.Delete: DB Delete failed: %v", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusNoContent)
+	_, err := lh.db.Exec(`DELETE FROM listings WHERE id = $1`, id)
+	if err != nil {
+		log.Printf("Handler.Delete: DB Delete failed: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
