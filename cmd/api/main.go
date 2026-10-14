@@ -4,9 +4,12 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/makdoom/go-backend/cmd/internal/config"
 )
 
 func main() {
+	cfg := config.MustLoad()
 
 	mux := http.NewServeMux()
 
@@ -16,7 +19,7 @@ func main() {
 	})
 
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":" + cfg.Port,
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
