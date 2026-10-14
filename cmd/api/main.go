@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/makdoom/go-backend/cmd/internal/config"
+	"github.com/makdoom/go-backend/cmd/internal/handlers"
 )
 
 func main() {
@@ -13,10 +14,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"OK"}`))
-	})
+	mux.HandleFunc("GET /health", handlers.Health)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
