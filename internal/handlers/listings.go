@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/makdoom/go-backend/internal/middlewares"
 )
 
 type listing struct {
@@ -75,12 +77,16 @@ func (lh *ListingHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (lh *ListingHandler) DeleteListing(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	requestId, ok := middlewares.RequestIdFromContext(ctx)
+	if !ok {
+		requestId = "unknown"
+	}
 
 	id := r.PathValue("id")
 
-	_, err := lh.db.ExecContext(ctx, `DELETE FROM listings WHERE id = $1`, id)
+	_, err := lh.db.ExecContext(ctx, `DELETE FROM listing WHERE id = $1`, id)
 	if err != nil {
-		lh.logger.Error("Handler.Delete: DB Delete failed", "listing_id", id, "error", err)
+		lh.logger.Error("Handler.Delete: DB Delete failed", "listing_id", id, "requestId", requestId, "error", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}

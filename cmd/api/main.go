@@ -10,6 +10,7 @@ import (
 	"github.com/makdoom/go-backend/internal/config"
 	"github.com/makdoom/go-backend/internal/db"
 	"github.com/makdoom/go-backend/internal/handlers"
+	"github.com/makdoom/go-backend/internal/middlewares"
 )
 
 func main() {
@@ -42,9 +43,12 @@ func main() {
 	mux.HandleFunc("GET /listings", lh.List)
 	mux.HandleFunc("DELETE /listing/{id}", lh.DeleteListing)
 
+	// Middlewares
+	muxHandler := middlewares.RequestId(mux)
+
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
-		Handler:      mux,
+		Handler:      muxHandler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,
