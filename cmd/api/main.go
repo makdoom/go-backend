@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/makdoom/go-backend/internal/config"
@@ -14,6 +16,14 @@ func main() {
 	// Load configurations
 	cfg := config.MustLoad()
 
+	// Custom logger
+	logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelDebug,
+	})
+	logger := slog.New(logHandler)
+	slog.SetDefault(logger)
+
 	// Database connection
 	db, err := db.Connect(cfg.DatabaseURL)
 	if err != nil {
@@ -23,7 +33,7 @@ func main() {
 	log.Printf("✅ Database connected successfully")
 
 	// Dependency Injection
-	lh := handlers.NewListingHandler(db)
+	lh := handlers.NewListingHandler(db, logger)
 
 	// Mux router
 	mux := http.NewServeMux()

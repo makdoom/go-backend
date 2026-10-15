@@ -3,7 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -19,11 +19,12 @@ type listing struct {
 }
 
 type ListingHandler struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *slog.Logger
 }
 
-func NewListingHandler(db *sql.DB) *ListingHandler {
-	return &ListingHandler{db: db}
+func NewListingHandler(db *sql.DB, logger *slog.Logger) *ListingHandler {
+	return &ListingHandler{db: db, logger: logger}
 }
 
 func (lh *ListingHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +37,7 @@ func (lh *ListingHandler) List(w http.ResponseWriter, r *http.Request) {
 			LIMIT 5
 		`)
 	if err != nil {
-		log.Printf("Handler.List: DB query failed: %v", err)
+		lh.logger.Error("Handler.ListDB query failed", "error", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -47,7 +48,7 @@ func (lh *ListingHandler) List(w http.ResponseWriter, r *http.Request) {
 		var l listing
 
 		if err := rows.Scan(&l.Id, &l.Title, &l.Description, &l.Price, &l.City, &l.CreatedAt, &l.UpdatedAt); err != nil {
-			log.Printf("Handler.List: DB scan failed: %v", err)
+			lh.logger.Error("Handler.List: DB scan failed", "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -56,13 +57,13 @@ func (lh *ListingHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Printf("Handler.List: DB iteration failed: %v", err)
+		lh.logger.Error("Handler.List: DB iteration failed", "error", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Printf("Handler.List: DB iteration failed after listing: %v", err)
+		lh.logger.Error("Handler.List: DB iteration failed", "error", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -79,7 +80,7 @@ func (lh *ListingHandler) DeleteListing(w http.ResponseWriter, r *http.Request) 
 
 	_, err := lh.db.ExecContext(ctx, `DELETE FROM listings WHERE id = $1`, id)
 	if err != nil {
-		log.Printf("Handler.Delete: DB Delete failed: %v", err)
+		lh.logger.Error("Handler.Delete: DB Delete failed", "listing_id", id, "error", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
